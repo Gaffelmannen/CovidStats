@@ -141,6 +141,6 @@ def numberOfICECasesPerDay():
 if __name__ == "__main__":
     filename = "Folkhalsomyndigheten_Covid19.xlsx"
     downloadExcelFile(filename)
-    #numberOfCasesPerDayAndRegion()
-    #numberOfDeathsPerDay()
+    numberOfCasesPerDayAndRegion()
+    numberOfDeathsPerDay()
     numberOfICECasesPerDay()
