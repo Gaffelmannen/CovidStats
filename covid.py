@@ -78,7 +78,7 @@ def createGraphs(name, values, dates, plottype = "Plot"):
         result = model.fit()
         print(result.summary())
 
-def numberOfPerDayAndRegion():
+def numberOfCasesPerDayAndRegion():
     selectedSheet = "Antal per dag region"
     df = pd.ExcelFile(filename).parse(selectedSheet)
     dates = df.Statistikdatum
@@ -106,13 +106,41 @@ def numberOfDeathsPerDay():
     ax.xaxis_date()
     ax.set_title("Antal avlidna i Covid 19")
     ax.set_xlabel("Datum")
-    ax.set_ylabel("Antal fall")
+    ax.set_ylabel("Antal avlidna")
     ax.legend(["Antal avlidna", "Rullande medeltal (Vecka)"])
     fig.autofmt_xdate()
     plt.savefig("plots/Antal_avlidna.png")
 
+def numberOfICECasesPerDay():
+    selectedSheet = "Antal intensivvårdade per dag"
+    df = pd.ExcelFile(filename).parse(selectedSheet)
+    df.Datum_vårdstart = pd.to_datetime(df.Datum_vårdstart, errors='coerce')
+    df = df.dropna(subset=['Datum_vårdstart'])
+
+    dates = df.Datum_vårdstart
+    values = df.Antal_intensivvårdade
+
+    # Rolling average
+    df = pd.DataFrame(values)
+    df['cum_sum'] = df.Antal_intensivvårdade.cumsum()
+    df['count'] = range(1,len(df.Antal_intensivvårdade)+1)
+    df['mov_avg'] = df['cum_sum'] / df['count']
+    df['rolling_mean2'] = df.Antal_intensivvårdade.rolling(window=7).mean()
+
+    fig, ax = plt.subplots()
+    ax.plot(dates, values)
+    ax.plot(dates, df['rolling_mean2'], "r--")
+    ax.xaxis_date()
+    ax.set_title("Antal nya intensivvårdade i Covid 19")
+    ax.set_xlabel("Datum")
+    ax.set_ylabel("Antal nya vårdade")
+    ax.legend(["Antal nya intensivvårdade", "Rullande medeltal (Vecka)"])
+    fig.autofmt_xdate()
+    plt.savefig("plots/Antal_intensivvårdade.png")
+
 if __name__ == "__main__":
     filename = "Folkhalsomyndigheten_Covid19.xlsx"
     downloadExcelFile(filename)
-    numberOfPerDayAndRegion()
-    numberOfDeathsPerDay()
+    #numberOfCasesPerDayAndRegion()
+    #numberOfDeathsPerDay()
+    numberOfICECasesPerDay()
