@@ -84,6 +84,37 @@ def numberOfCasesPerDayAndRegion():
     dates = df.Statistikdatum
     [createGraphs(list(df)[i], df.iloc[:,i], dates) for i in range(1, len(list(df)))]
 
+def numberOfDeaths():
+    selectedSheet = "Antal avlidna per dag"
+    df = pd.ExcelFile(filename).parse(selectedSheet)
+    df.Datum_avliden = pd.to_datetime(df.Datum_avliden, errors='coerce')
+    df = df.dropna(subset=['Datum_avliden'])
+
+    dates = df.Datum_avliden
+    values = df.Antal_avlidna
+    cumsum = values.cumsum()
+
+    fig, ax = plt.subplots()
+    ax.plot(dates, cumsum)
+    ax.xaxis_date()
+    ax.set_title("Totalt antal avlidna Covid 19")
+    ax.set_xlabel("Datum")
+    ax.set_ylabel("Antal avlidna")
+    ax.legend(["Antal avlidna"])
+    fig.autofmt_xdate()
+    plt.savefig("plots/Antal_totalt_avlidna.png")
+
+    fig, ax = plt.subplots()
+    ax.semilogy(dates, cumsum)
+    ax.grid()
+    ax.xaxis_date()
+    ax.set_title("Totalt antal avlidna Covid 19")
+    ax.set_xlabel("Datum")
+    ax.set_ylabel("Antal avlidna")
+    ax.legend(["Antal avlidna"])
+    fig.autofmt_xdate()
+    plt.savefig("plots/Antal_totalt_avlidna_log.png")
+
 def numberOfDeathsPerDay():
     selectedSheet = "Antal avlidna per dag"
     df = pd.ExcelFile(filename).parse(selectedSheet)
@@ -104,9 +135,9 @@ def numberOfDeathsPerDay():
     ax.plot(dates, values)
     ax.plot(dates, df['rolling_mean2'], "r--")
     ax.xaxis_date()
-    ax.set_title("Antal avlidna i Covid 19")
+    ax.set_title("Antal avlidna per dag i Covid 19")
     ax.set_xlabel("Datum")
-    ax.set_ylabel("Antal avlidna")
+    ax.set_ylabel("Antal avlidna per dag")
     ax.legend(["Antal avlidna", "Rullande medeltal (Vecka)"])
     fig.autofmt_xdate()
     plt.savefig("plots/Antal_avlidna.png")
@@ -144,3 +175,4 @@ if __name__ == "__main__":
     numberOfCasesPerDayAndRegion()
     numberOfDeathsPerDay()
     numberOfICECasesPerDay()
+    numberOfDeaths()
