@@ -56,10 +56,10 @@ def createGraphs(name, values, dates, plottype = "Plot"):
 
     # Normal print
     ax.xaxis_date()
-    ax.set_title("Covid 19 Fall i {}".format(title))
+    ax.set_title("Nya Covid 19 Fall i {}".format(title))
     ax.set_xlabel("Datum")
-    ax.set_ylabel("Antal fall")
-    ax.legend(["Antal fall", "Rullande medeltal (Vecka)"])
+    ax.set_ylabel("Antal nya fall")
+    ax.legend(["Antal nya fall per dag", "Rullande medeltal (Vecka)"])
     fig.autofmt_xdate()
     plt.savefig("plots/{}.png".format(name))
     plt.close()
@@ -68,7 +68,7 @@ def createGraphs(name, values, dates, plottype = "Plot"):
     if generateTrendprint:
         decomposition = sm.tsa.seasonal_decompose(values, model='additive', period=1)
         decomposition.plot()
-        plt.savefig('test2.png')
+        plt.savefig("plots/trend-{}.png".format(name))
 
     # Statistics
     if calculateStatistics:
@@ -77,6 +77,19 @@ def createGraphs(name, values, dates, plottype = "Plot"):
         model = sm.OLS(spector_data.endog, spector_data.exog)
         result = model.fit()
         print(result.summary())
+
+    # Total print
+    fig, ax = plt.subplots()
+    ax.plot(dates, df['cum_sum'])
+    ax.xaxis_date()
+    ax.set_title("Totala antalet Covid 19 Fall i {}".format(title))
+    ax.set_xlabel("Datum")
+    ax.set_ylabel("Totalt antal fall")
+    ax.legend(["Antal fall"])
+    fig.autofmt_xdate()
+    plt.savefig("plots/{}-totalt.png".format(name))
+    plt.close()
+
 
 def numberOfCasesPerDayAndRegion():
     selectedSheet = "Antal per dag region"
@@ -158,6 +171,7 @@ def numberOfICECasesPerDay():
     df['mov_avg'] = df['cum_sum'] / df['count']
     df['rolling_mean2'] = df.Antal_intensivvårdade.rolling(window=7).mean()
 
+    # Per day
     fig, ax = plt.subplots()
     ax.plot(dates, values)
     ax.plot(dates, df['rolling_mean2'], "r--")
@@ -168,6 +182,17 @@ def numberOfICECasesPerDay():
     ax.legend(["Antal nya intensivvårdade", "Rullande medeltal (Vecka)"])
     fig.autofmt_xdate()
     plt.savefig("plots/Antal_intensivvårdade.png")
+
+    # Totals
+    fig, ax = plt.subplots()
+    ax.plot(dates, df['cum_sum'])
+    ax.xaxis_date()
+    ax.set_title("Total antal intensivvårdade i Covid 19")
+    ax.set_xlabel("Datum")
+    ax.set_ylabel("Totalt antal vårdade")
+    ax.legend(["Totalt antal intensivvårdade"])
+    fig.autofmt_xdate()
+    plt.savefig("plots/Antal_intensivvårdade-totalt.png")
 
 if __name__ == "__main__":
     filename = "Folkhalsomyndigheten_Covid19.xlsx"
