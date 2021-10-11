@@ -11,6 +11,8 @@ import statsmodels.api as sm
 import requests
 import os
 import time
+import sys
+import tqdm
 
 CONST_MAX_AGE_OF_DATA_FILE_IN_MINUTES = 60
 CONST_DATA_FILE_URI = "https://www.arcgis.com/sharing/rest/content/items/b5e7488e117749c19881cce45db13f7e/data"
@@ -91,19 +93,25 @@ def createGraphs(name, values, dates, plottype = "Plot"):
     plt.close()
 
 
-def numberOfCasesPerDayAndRegion():
+def numberOfCasesPerDayAndRegion(start_date, end_date):
     selectedSheet = "Antal per dag region"
     df = pd.ExcelFile(filename).parse(selectedSheet)
-    dates = df.Statistikdatum
+    dates = pd.to_datetime(df.Statistikdatum)
+
+    mask = (dates > start_date) & (dates <= end_date)
+    df = df.where(mask)
+
     [createGraphs(list(df)[i], df.iloc[:,i], dates) for i in range(1, len(list(df)))]
 
-def numberOfDeaths():
+def numberOfDeaths(start_date, end_date):
     selectedSheet = "Antal avlidna per dag"
     df = pd.ExcelFile(filename).parse(selectedSheet)
-    df.Datum_avliden = pd.to_datetime(df.Datum_avliden, errors='coerce')
-    df = df.dropna(subset=['Datum_avliden'])
 
-    dates = df.Datum_avliden
+    dates = pd.to_datetime(df.Datum_avliden, errors='coerce')
+
+    mask = (dates > start_date) & (dates <= end_date)
+    df = df.where(mask)
+
     values = df.Antal_avlidna
     cumsum = values.cumsum()
 
@@ -128,11 +136,16 @@ def numberOfDeaths():
     fig.autofmt_xdate()
     plt.savefig("plots/Antal_totalt_avlidna_log.png")
 
-def numberOfDeathsPerDay():
+def numberOfDeathsPerDay(start_date, end_date):
     selectedSheet = "Antal avlidna per dag"
     df = pd.ExcelFile(filename).parse(selectedSheet)
     df.Datum_avliden = pd.to_datetime(df.Datum_avliden, errors='coerce')
     df = df.dropna(subset=['Datum_avliden'])
+
+    dates = pd.to_datetime(df.Datum_avliden, errors='coerce')
+
+    mask = (dates > start_date) & (dates <= end_date)
+    df = df.where(mask)
 
     dates = df.Datum_avliden
     values = df.Antal_avlidna
@@ -155,13 +168,18 @@ def numberOfDeathsPerDay():
     fig.autofmt_xdate()
     plt.savefig("plots/Antal_avlidna.png")
 
-def numberOfICECasesPerDay():
+def numberOfICECasesPerDay(start_date, end_date):
     selectedSheet = "Antal intensivvårdade per dag"
     df = pd.ExcelFile(filename).parse(selectedSheet)
     df.Datum_vårdstart = pd.to_datetime(df.Datum_vårdstart, errors='coerce')
     df = df.dropna(subset=['Datum_vårdstart'])
 
-    dates = df.Datum_vårdstart
+    dates = pd.to_datetime(df.Datum_vårdstart, errors='coerce')
+
+    mask = (dates > start_date) & (dates <= end_date)
+    df = df.where(mask)
+
+    #dates = df.Datum_vårdstart
     values = df.Antal_intensivvårdade
 
     # Rolling average
@@ -194,10 +212,31 @@ def numberOfICECasesPerDay():
     fig.autofmt_xdate()
     plt.savefig("plots/Antal_intensivvårdade-totalt.png")
 
+def doit():
+    start_date = dt.datetime.now() - dt.timedelta(days=10) - dt.timedelta(days=365) #'2021-01-01'
+    end_date =  dt.datetime.now() - dt.timedelta(days=10)  #'2021-03-30'
+    downloadExcelFile(filename)
+    numberOfCasesPerDayAndRegion(start_date, end_date)
+    numberOfDeathsPerDay(start_date, end_date)
+    numberOfICECasesPerDay(start_date, end_date)
+    numberOfDeaths(start_date, end_date)
+    yield
+
 if __name__ == "__main__":
     filename = "Folkhalsomyndigheten_Covid19.xlsx"
-    downloadExcelFile(filename)
-    numberOfCasesPerDayAndRegion()
-    numberOfDeathsPerDay()
-    numberOfICECasesPerDay()
-    numberOfDeaths()
+
+    animation = "|/-\\"
+    idx = 0
+    while doit():
+        print(animation[idx % len(animation)], end="\r")
+        idx += 1
+        time.sleep(0.1)
+
+    #text = 'Working...'
+    #print(text)
+
+    #sys.stdout.write("\033[F")
+    #for c in text:
+    #    sys.stdout.write('\b')
+    #sys.stdout.flush()
+    #print('Done.')
